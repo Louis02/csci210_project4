@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 
+
 #define N 13
 
 extern char **environ;
@@ -31,7 +32,13 @@ void sendmsg (char *user, char *target, char *msg) {
 	// Send a request to the server to send the message (msg) to the target user (target)
 	// by creating the message structure and writing it to server's FIFO
 
-
+	int server;
+        struct message messageStruct;
+        strcpy(messageStruct.source, user);
+        strcpy(messageStruct.target, target);
+        strcpy(messageStruct.msg, msg);
+        server = open("serverFIFO", O_WRONLY);
+        write(server, &messageStruct, sizeof(struct message));
 
 
 
@@ -49,6 +56,15 @@ void* messageListener(void *arg) {
 	// Incoming message from [source]: [message]
 	// put an end of line at the end of the message
 
+	int server;
+	struct message req;
+	server = open(uName, O_RDONLY);
+	while(1){
+		if (read(server,&req,sizeof(struct message))!=sizeof(struct message)) {
+			continue;
+		}
+		printf("Incoming message from %s: %s\n", req.source, req.msg);
+	}
 
 
 
@@ -85,7 +101,10 @@ int main(int argc, char **argv) {
 
     // TODO:
     // create the message listener thread
-
+    pthread_t tid;
+    int *arr;
+    arr = (int *)malloc(sizeof(int)*500);
+    pthread_create(&tid, NULL, messageListener, (void *)arr);
 
 
 
@@ -124,13 +143,35 @@ int main(int argc, char **argv) {
 		// if no message is specified, you should print the followingA
  		// printf("sendmsg: you have to enter a message\n");
 
+		//string holding target
+		char *target;
+
+		//copying the command line input to a new string
+		char input[256];
+		strcpy(input, line2);
+
+		//string holding the user of the command
+		char *msg;
+
+		//splits up the input into specified strings
+		target = strtok(input, " ");
+		target = strtok(NULL, " ");
+		if(target != NULL){
+			msg = strtok(NULL, "");
+		}
+		//if they didn't specify a user
+		else{
+			printf("sendmsg: you have to specify target user\n");
+		}
+
+		//if they didn't specify a message
+		if(msg == NULL){
+			printf("sendmsg: you have to enter a message\n");
+		}
 
 
-
-
-
-
-
+		//call sendmsg
+		sendmsg(uName, target, msg);
 
 
 		continue;
