@@ -37,7 +37,7 @@ void sendmsg (char *user, char *target, char *msg) {
         strcpy(messageStruct.source, user);
         strcpy(messageStruct.target, target);
         strcpy(messageStruct.msg, msg);
-        server = open(uName, O_WRONLY);
+        server = open(target, O_WRONLY);
         write(server, &messageStruct, sizeof(struct message));
 
 
