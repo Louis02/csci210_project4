@@ -34,12 +34,13 @@ void sendmsg (char *user, char *target, char *msg) {
 
 	int server;
         struct message messageStruct;
-        strcpy(messageStruct.source, user);
+	signal(SIGPIPE,SIG_IGN);
+        strcpy(messageStruct.source, uName);
         strcpy(messageStruct.target, target);
         strcpy(messageStruct.msg, msg);
-        server = open(target, O_WRONLY);
+        server = open("serverFIFO", O_WRONLY);
         write(server, &messageStruct, sizeof(struct message));
-
+	close(server);
 
 
 
@@ -59,6 +60,7 @@ void* messageListener(void *arg) {
 	int server;
 	struct message req;
 	server = open(uName, O_RDONLY);
+	signal(SIGPIPE,SIG_IGN);
 	while(1){
 		if (read(server,&req,sizeof(struct message))!=sizeof(struct message)) {
 			continue;
@@ -67,10 +69,11 @@ void* messageListener(void *arg) {
 	}
 
 
-
+	close(server);
 
 
 	pthread_exit((void*)0);
+	return NULL;
 }
 
 int isAllowed(const char*cmd) {
@@ -102,9 +105,7 @@ int main(int argc, char **argv) {
     // TODO:
     // create the message listener thread
     pthread_t tid;
-    int *arr;
-    arr = (int *)malloc(sizeof(int)*500);
-    pthread_create(&tid, NULL, messageListener, (void *)arr);
+    pthread_create(&tid, NULL, messageListener, NULL);
 
 
 
@@ -168,7 +169,6 @@ int main(int argc, char **argv) {
 		if(msg == NULL){
 			printf("sendmsg: you have to enter a message\n");
 		}
-
 
 		//call sendmsg
 		sendmsg(uName, target, msg);
